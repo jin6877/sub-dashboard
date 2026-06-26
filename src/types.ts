@@ -23,15 +23,17 @@ export interface CategoryMeta {
   emoji: string
 }
 
+// Monochrome accent palette: shades of slate (light → dark) for a calm,
+// Notion/Linear-style minimal look. Ordering follows typical spend magnitude.
 export const CATEGORIES: CategoryMeta[] = [
-  { id: 'ott', label: 'OTT·영상', color: '#6366f1', emoji: '🎬' },
-  { id: 'music', label: '음악', color: '#ec4899', emoji: '🎵' },
-  { id: 'productivity', label: '생산성·AI', color: '#22d3ee', emoji: '⚡' },
-  { id: 'shopping', label: '쇼핑·멤버십', color: '#f59e0b', emoji: '🛍️' },
-  { id: 'game', label: '게임', color: '#a855f7', emoji: '🎮' },
-  { id: 'news', label: '뉴스·콘텐츠', color: '#14b8a6', emoji: '📰' },
-  { id: 'cloud', label: '클라우드·저장', color: '#3b82f6', emoji: '☁️' },
-  { id: 'etc', label: '기타', color: '#94a3b8', emoji: '✨' },
+  { id: 'ott', label: 'OTT·영상', color: '#334155', emoji: '🎬' },
+  { id: 'productivity', label: '생산성·AI', color: '#475569', emoji: '⚡' },
+  { id: 'music', label: '음악', color: '#64748b', emoji: '🎵' },
+  { id: 'shopping', label: '쇼핑·멤버십', color: '#7c8aa0', emoji: '🛍️' },
+  { id: 'game', label: '게임', color: '#94a3b8', emoji: '🎮' },
+  { id: 'cloud', label: '클라우드·저장', color: '#aab5c4', emoji: '☁️' },
+  { id: 'news', label: '뉴스·콘텐츠', color: '#c1cad5', emoji: '📰' },
+  { id: 'etc', label: '기타', color: '#d4dae2', emoji: '✨' },
 ]
 
 export const CATEGORY_MAP: Record<CategoryId, CategoryMeta> = CATEGORIES.reduce(

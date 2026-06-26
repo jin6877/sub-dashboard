@@ -31,7 +31,7 @@ export default function DonutChart({ slices, centerTop, centerBottom }: Props) {
     <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-7">
       <div className="relative shrink-0" style={{ width: SIZE, height: SIZE }}>
         <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="-rotate-90">
-          <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="#1e1b3a" strokeWidth={STROKE} />
+          <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none" stroke="#f1f1f1" strokeWidth={STROKE} />
           {total > 0 &&
             slices.map((s) => {
               const frac = s.value / total
@@ -63,18 +63,16 @@ export default function DonutChart({ slices, centerTop, centerBottom }: Props) {
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
           {activeSlice ? (
             <>
-              <span className="text-xs font-medium text-slate-400">
+              <span className="text-xs font-medium text-neutral-500">
                 {activeSlice.emoji} {activeSlice.label}
               </span>
-              <span className="mt-0.5 text-lg font-bold text-white">{formatKRWShort(activeSlice.value)}원</span>
-              <span className="text-xs text-indigo-300">{Math.round((activeSlice.value / total) * 100)}%</span>
+              <span className="mt-0.5 text-lg font-semibold text-neutral-900">{formatKRWShort(activeSlice.value)}원</span>
+              <span className="text-xs text-neutral-400">{Math.round((activeSlice.value / total) * 100)}%</span>
             </>
           ) : (
             <>
-              <span className="text-xs font-medium text-slate-400">{centerTop}</span>
-              <span className="mt-0.5 bg-gradient-to-r from-indigo-300 to-fuchsia-300 bg-clip-text text-xl font-extrabold text-transparent">
-                {centerBottom}
-              </span>
+              <span className="text-xs font-medium text-neutral-500">{centerTop}</span>
+              <span className="mt-0.5 text-xl font-semibold text-neutral-900">{centerBottom}</span>
             </>
           )}
         </div>
@@ -89,14 +87,14 @@ export default function DonutChart({ slices, centerTop, centerBottom }: Props) {
               onMouseEnter={() => setActive(s.key)}
               onMouseLeave={() => setActive(null)}
               className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors ${
-                active === s.key ? 'bg-white/5' : ''
+                active === s.key ? 'bg-neutral-100' : ''
               }`}
             >
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: s.color }} />
-              <span className="truncate text-slate-200">
+              <span className="truncate text-neutral-700">
                 {s.emoji} {s.label}
               </span>
-              <span className="ml-auto shrink-0 font-semibold text-slate-300">{pct}%</span>
+              <span className="ml-auto shrink-0 font-medium text-neutral-500">{pct}%</span>
             </li>
           )
         })}

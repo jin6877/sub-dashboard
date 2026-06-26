@@ -66,22 +66,22 @@ export default function SubForm({ editing, onClose, onSave }: Props) {
     })
   }
 
-  const field = 'w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition focus:border-indigo-400 focus:bg-white/10'
-  const label = 'mb-1.5 block text-xs font-semibold text-slate-400'
+  const field = 'w-full rounded-lg border border-neutral-300 bg-white px-3.5 py-2.5 text-sm text-neutral-900 placeholder-neutral-400 outline-none transition focus:border-neutral-900'
+  const label = 'mb-1.5 block text-xs font-medium text-neutral-500'
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-neutral-900/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
     >
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
-        className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-white/10 bg-[#14132b] p-6 shadow-2xl shadow-indigo-950/50 sm:rounded-3xl"
+        className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-neutral-200 bg-white p-6 shadow-xl sm:rounded-2xl"
       >
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">{editing ? '구독 수정' : '구독 추가'}</h2>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-white/5 hover:text-white">
+          <h2 className="text-lg font-semibold text-neutral-900">{editing ? '구독 수정' : '구독 추가'}</h2>
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900">
             ✕
           </button>
         </div>
@@ -107,7 +107,7 @@ export default function SubForm({ editing, onClose, onSave }: Props) {
               <label className={label}>통화</label>
               <select className={field} value={currency} onChange={(e) => setCurrency(e.target.value as Currency)}>
                 {CURRENCIES.map((c) => (
-                  <option key={c.code} value={c.code} className="bg-[#14132b]">
+                  <option key={c.code} value={c.code}>
                     {c.symbol} {c.code}
                   </option>
                 ))}
@@ -123,10 +123,10 @@ export default function SubForm({ editing, onClose, onSave }: Props) {
                   key={c}
                   type="button"
                   onClick={() => setCycle(c)}
-                  className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition ${
+                  className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
                     cycle === c
-                      ? 'border-indigo-400 bg-indigo-500/20 text-white'
-                      : 'border-white/10 bg-white/5 text-slate-400 hover:text-white'
+                      ? 'border-neutral-900 bg-neutral-900 text-white'
+                      : 'border-neutral-300 bg-white text-neutral-500 hover:border-neutral-400'
                   }`}
                 >
                   {CYCLE_LABEL[c]}
@@ -139,7 +139,7 @@ export default function SubForm({ editing, onClose, onSave }: Props) {
             <label className={label}>다음 결제일</label>
             <input
               type="date"
-              className={`${field} [color-scheme:dark]`}
+              className={field}
               value={nextPayment}
               onChange={(e) => setNextPayment(e.target.value)}
             />
@@ -153,10 +153,11 @@ export default function SubForm({ editing, onClose, onSave }: Props) {
                   key={c.id}
                   type="button"
                   onClick={() => setCategory(c.id)}
-                  className={`flex flex-col items-center gap-1 rounded-xl border px-1 py-2 text-[11px] font-medium transition ${
-                    category === c.id ? 'border-transparent text-white' : 'border-white/10 bg-white/5 text-slate-400'
+                  className={`flex flex-col items-center gap-1 rounded-lg border px-1 py-2 text-[11px] font-medium transition ${
+                    category === c.id
+                      ? 'border-neutral-900 bg-neutral-900 text-white'
+                      : 'border-neutral-300 bg-white text-neutral-500 hover:border-neutral-400'
                   }`}
-                  style={category === c.id ? { background: c.color + '33', borderColor: c.color } : undefined}
                 >
                   <span className="text-base">{c.emoji}</span>
                   <span className="truncate">{c.label}</span>
@@ -175,13 +176,13 @@ export default function SubForm({ editing, onClose, onSave }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-xl border border-white/10 bg-white/5 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10"
+            className="flex-1 rounded-lg border border-neutral-300 bg-white py-3 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
           >
             취소
           </button>
           <button
             type="submit"
-            className="flex-[2] rounded-xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-900/40 transition hover:from-indigo-400 hover:to-fuchsia-400"
+            className="flex-[2] rounded-lg bg-neutral-900 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
           >
             {editing ? '저장' : '추가하기'}
           </button>
