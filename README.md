@@ -10,7 +10,7 @@
 
 ## 🔗 라이브 데모
 
-**👉 (배포 후 갱신)**
+**👉 https://sub-dashboard-phi.vercel.app**
 
 ![앱 스크린샷](docs/screenshot.png)
 
