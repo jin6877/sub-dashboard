@@ -17,7 +17,8 @@ import {
   toKRW,
   toMonthlyKRW,
 } from './lib/calc'
-import { getInitialRates, isStale, refreshRates, type RateData } from './lib/rates'
+import { FALLBACK, getInitialRates, isStale, refreshRates, type RateData } from './lib/rates'
+import { ensurePersistentStorage, type PersistState } from './lib/persist'
 import DonutChart, { type DonutSlice } from './components/DonutChart'
 import SubForm from './components/SubForm'
 
@@ -37,14 +38,20 @@ function timeAgo(ms: number): string {
 }
 
 export default function App() {
-  const [subs, setSubs] = useState<Subscription[]>(() => loadSubs())
-  const [rates, setRates] = useState<RateData>(() => getInitialRates())
+  const [subs, setSubs] = useState<Subscription[]>([])
+  const [ready, setReady] = useState(false)
+  const [rates, setRates] = useState<RateData>(FALLBACK)
   const [loadingRates, setLoadingRates] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Subscription | null>(null)
   const [sortKey, setSortKey] = useState<SortKey>('date')
+  const [persist, setPersist] = useState<PersistState>('unsupported')
 
-  useEffect(() => saveSubs(subs), [subs])
+  // Persist subscriptions (async, IndexedDB) — only after the initial load.
+  useEffect(() => {
+    if (!ready) return
+    void saveSubs(subs)
+  }, [subs, ready])
 
   const doRefresh = async () => {
     setLoadingRates(true)
@@ -53,25 +60,30 @@ export default function App() {
     setLoadingRates(false)
   }
 
+  // Initial async bootstrap: request persistent storage, load data from
+  // IndexedDB (migrating legacy localStorage), normalize dates, refresh rates.
   useEffect(() => {
-    if (isStale(rates)) doRefresh()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    let cancelled = false
+    ;(async () => {
+      void ensurePersistentStorage().then((p) => !cancelled && setPersist(p))
 
-  // Normalize past payment dates forward on load.
-  useEffect(() => {
-    setSubs((prev) => {
-      let changed = false
-      const next = prev.map((s) => {
+      const [loaded, cachedRates] = await Promise.all([loadSubs(), getInitialRates()])
+      if (cancelled) return
+
+      // Normalize past payment dates forward on load.
+      const normalized = loaded.map((s) => {
         const np = normalizedNextPayment(s)
-        if (np !== s.nextPayment) {
-          changed = true
-          return { ...s, nextPayment: np }
-        }
-        return s
+        return np !== s.nextPayment ? { ...s, nextPayment: np } : s
       })
-      return changed ? next : prev
-    })
+      setSubs(normalized)
+      setRates(cachedRates)
+      setReady(true)
+
+      if (isStale(cachedRates)) doRefresh()
+    })()
+    return () => {
+      cancelled = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -134,6 +146,19 @@ export default function App() {
   const openEdit = (s: Subscription) => {
     setEditing(s)
     setFormOpen(true)
+  }
+
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-neutral-50 text-neutral-900">
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-neutral-900 text-lg text-white">
+            📊
+          </div>
+          <p className="text-sm text-neutral-400">불러오는 중…</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -348,8 +373,9 @@ export default function App() {
           )}
         </section>
 
-        <footer className="mt-10 text-center text-xs text-neutral-400">
-          모든 데이터는 브라우저에만 저장됩니다 · 서버 전송 없음
+        <footer className="mt-10 flex flex-col items-center gap-1.5 text-center text-xs text-neutral-400">
+          <PersistBadge state={persist} />
+          <span>모든 데이터는 브라우저에만 저장됩니다 · 서버 전송 없음</span>
         </footer>
       </div>
 
@@ -376,6 +402,22 @@ function SortTab({ active, onClick, children }: { active: boolean; onClick: () =
     >
       {children}
     </button>
+  )
+}
+
+function PersistBadge({ state }: { state: PersistState }) {
+  if (state === 'persisted') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 font-medium text-neutral-600">
+        <span className="text-emerald-500">🔒</span> 영구 저장 켜짐 · 자동 삭제 안 됨
+      </span>
+    )
+  }
+  // transient or unsupported
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 font-medium text-amber-700">
+      <span>⚠️</span> 영구 저장 꺼짐 · PWA로 설치하면 더 안전하게 보관돼요
+    </span>
   )
 }
 

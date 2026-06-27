@@ -1,29 +1,63 @@
+import { get, set } from 'idb-keyval'
 import type { Subscription } from '../types'
 
-const KEY = 'subda.subscriptions.v1'
-
-export function loadSubs(): Subscription[] {
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return seed()
-    const data = JSON.parse(raw) as Subscription[]
-    if (!Array.isArray(data)) return seed()
-    return data
-  } catch {
-    return seed()
-  }
-}
-
-export function saveSubs(subs: Subscription[]) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(subs))
-  } catch {
-    /* ignore */
-  }
-}
+const SUBS_KEY = 'subda.subscriptions.v1'
+// Legacy localStorage key (same name) — read once for migration.
+const LEGACY_SUBS_KEY = 'subda.subscriptions.v1'
 
 export function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
+}
+
+function isValidSubs(data: unknown): data is Subscription[] {
+  return Array.isArray(data)
+}
+
+/**
+ * Load subscriptions from IndexedDB.
+ * On first run after the localStorage→IndexedDB migration, any existing
+ * localStorage data is copied over once so no data is lost.
+ * Returns seed data only when there is truly no prior data anywhere.
+ */
+export async function loadSubs(): Promise<Subscription[]> {
+  try {
+    const idbData = await get<Subscription[]>(SUBS_KEY)
+    if (isValidSubs(idbData)) return idbData
+  } catch {
+    /* fall through to migration / seed */
+  }
+
+  // Migrate from legacy localStorage if present.
+  const migrated = migrateFromLocalStorage()
+  if (migrated) {
+    // Persist the migrated data into IndexedDB immediately.
+    void saveSubs(migrated)
+    return migrated
+  }
+
+  return seed()
+}
+
+function migrateFromLocalStorage(): Subscription[] | null {
+  try {
+    const raw = localStorage.getItem(LEGACY_SUBS_KEY)
+    if (!raw) return null
+    const data = JSON.parse(raw) as unknown
+    if (!isValidSubs(data)) return null
+    // Remove the legacy entry so we don't migrate again.
+    localStorage.removeItem(LEGACY_SUBS_KEY)
+    return data
+  } catch {
+    return null
+  }
+}
+
+export async function saveSubs(subs: Subscription[]): Promise<void> {
+  try {
+    await set(SUBS_KEY, subs)
+  } catch {
+    /* ignore — storage may be unavailable */
+  }
 }
 
 function future(daysFromNow: number): string {

@@ -1,3 +1,4 @@
+import { get, set } from 'idb-keyval'
 import type { Currency } from '../types'
 
 export interface RateData {
@@ -8,6 +9,7 @@ export interface RateData {
 }
 
 const CACHE_KEY = 'subda.rates.v1'
+const LEGACY_CACHE_KEY = 'subda.rates.v1' // legacy localStorage key
 const TTL = 1000 * 60 * 60 * 8 // 8 hours
 
 // Reasonable hardcoded fallback (₩ per 1 unit). Used offline / on failure.
@@ -19,21 +21,41 @@ export const FALLBACK: RateData = {
 
 const FOREIGN: Exclude<Currency, 'KRW'>[] = ['USD', 'EUR', 'JPY', 'GBP']
 
-export function loadCachedRates(): RateData | null {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY)
-    if (!raw) return null
-    const data = JSON.parse(raw) as RateData
-    if (!data?.rates?.USD) return null
-    return data
-  } catch {
-    return null
-  }
+function isValidRate(data: unknown): data is RateData {
+  return !!(data as RateData)?.rates?.USD
 }
 
-function saveCache(data: RateData) {
+/**
+ * Load the cached rate from IndexedDB, migrating any legacy localStorage
+ * cache on first run.
+ */
+export async function loadCachedRates(): Promise<RateData | null> {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data))
+    const data = await get<RateData>(CACHE_KEY)
+    if (isValidRate(data)) return data
+  } catch {
+    /* fall through */
+  }
+  // Migrate legacy localStorage cache once.
+  try {
+    const raw = localStorage.getItem(LEGACY_CACHE_KEY)
+    if (raw) {
+      const data = JSON.parse(raw) as unknown
+      localStorage.removeItem(LEGACY_CACHE_KEY)
+      if (isValidRate(data)) {
+        void saveCache(data)
+        return data
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return null
+}
+
+async function saveCache(data: RateData) {
+  try {
+    await set(CACHE_KEY, data)
   } catch {
     /* ignore */
   }
@@ -79,6 +101,10 @@ async function fetchFromFrankfurter(): Promise<RateData> {
   return { rates, updatedAt: Date.now(), source: 'frankfurter.app' }
 }
 
+/**
+ * Network-first refresh. On failure (e.g. offline), falls back to the last
+ * cached rate (IndexedDB) and finally the hardcoded fallback.
+ */
 export async function refreshRates(): Promise<RateData> {
   let data: RateData
   try {
@@ -87,15 +113,18 @@ export async function refreshRates(): Promise<RateData> {
     try {
       data = await fetchFromFrankfurter()
     } catch {
-      const cached = loadCachedRates()
+      const cached = await loadCachedRates()
       return cached ?? FALLBACK
     }
   }
-  saveCache(data)
+  await saveCache(data)
   return data
 }
 
-// Get rates immediately (cache or fallback) without awaiting network.
-export function getInitialRates(): RateData {
-  return loadCachedRates() ?? FALLBACK
+/**
+ * Resolve the initial rate without blocking on the network: cached value if
+ * present, otherwise the hardcoded fallback.
+ */
+export async function getInitialRates(): Promise<RateData> {
+  return (await loadCachedRates()) ?? FALLBACK
 }
